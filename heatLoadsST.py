@@ -40,7 +40,7 @@ if option == choices[1]:
     dtname = dt
 
 if option == choices[2]:
-    lnk = "[Download template](https://github.com/maajdl/glpkModelXLL/raw/master/Stigler's%201939%20diet%20problem%20v1.xlsx)"
+    lnk = "[Download template](https://github.com/gamathe/Heat_Loads_ST/raw/main/Heat_loads_data.xlsx)"
     st.markdown(lnk)
 
 if option == choices[3]:
