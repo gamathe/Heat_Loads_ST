@@ -288,7 +288,7 @@ def Qdot(iflag_internal_blind, iflag_suspended_ceiling, iflag_raised_floor, ifla
 
     # Plant on/off
     #Smooth starting of the system when intermittent cooling is performed
-    hour_start_occupancy = hour_start_coolingplant
+#     hour_start_occupancy = hour_start_coolingplant
     f_plant=np.asarray([plant(hi,hour_start_coolingplant,hour_stop_coolingplant,hour_start_occupancy) for hi in hour_per])
     
     #!Occupancy heat gains#
