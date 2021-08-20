@@ -11,9 +11,11 @@ pi = np.pi
 month = 7
 
 # "!Boundary layers"
-h_r=5 # [W/m^2-K]
+h_r = 5 # [W/m^2-K]
 h_c = 7 # [W/m^2-K]
-h_in=h_r + h_c
+# h_in=h_r + h_c
+h_in = 8 # [W/m^2-K]
+h_out=17.5 # [W/m^2-K]
 
 # "Air properties:"
 v_a=0.8401 # [m^3/kg] "specific volume of humid air per kg of dry air"
@@ -29,9 +31,13 @@ Lenght_6h_0h=5.4 # [m]
 Lenght_9h_3h=1.8 # [m]
 
 # "! Windows areas supposed to be included in 0h wall"
-Height_wd_0 =1.2 # [m]
+# Height_wd_0 =1.2 # [m]
 Breadth_wd_0 =1.6 # [m]
 Height_wd_sill_0 =0.8 #[m]
+
+
+
+
 
 thickness_gl = 0.006 #[m]
 
@@ -101,9 +107,9 @@ def Qdot(iflag_internal_blind, iflag_suspended_ceiling, iflag_raised_floor, ifla
          Q_dot_sol_wd, month): 
     
     # "!Boundary layers"
-    h_r=5 # [W/m^2-K]
-    h_c = 7 # [W/m^2-K]
-    h_in=h_r + h_c
+#     h_r=5 # [W/m^2-K]
+#     h_c = 7 # [W/m^2-K]
+#     h_in=h_r + h_c
     
     # "! Room Data"
     # "Room height"
@@ -114,15 +120,27 @@ def Qdot(iflag_internal_blind, iflag_suspended_ceiling, iflag_raised_floor, ifla
     Lenght_9h_3h=1.8 # [m]
 
     # "! Windows areas supposed to be included in 0h wall"
-    Height_wd_0 =1.2 # [m]
+#     Height_wd_0 =1.2 # [m]
     Breadth_wd_0 =1.6 # [m]
     Height_wd_sill_0 =0.8 #[m]
-
+    
     H_B_wd=max(0.001,H_B)
-    area_wd = Height_wd_0 * Breadth_wd_0
-    Height_wd = (area_wd * H_B_wd) ** 0.5
-    Breadth_wd = (area_wd / H_B_wd) ** 0.5
-    Height_wd_sill = max(0.1, min(Height_wd_sill_0, Height_room - Height_wd) )
+ 
+    Height_wd_0=H_B_wd*Breadth_wd_0
+    if Height_wd_0 <= Height_room-0.2:
+        Height_wd  = Height_wd_0
+        Breadth_wd = Breadth_wd_0
+    else:
+        Height_wd  = Height_room-0.2
+        Breadth_wd = (Height_room-0.2) / H_B_wd
+        
+    if Height_wd <= Height_room-1:
+        Height_wd_sill = Height_wd_sill_0
+    else:
+        Height_wd_sill = Height_room-Height_wd-0.1
+        
+    # "!Window area"
+    area_wd=Height_wd*Breadth_wd
     
     area_wall_0h=max(0,Height_room*Lenght_9h_3h-area_wd)
     area_wall_3h=Height_room*Lenght_6h_0h
@@ -287,8 +305,8 @@ def Qdot(iflag_internal_blind, iflag_suspended_ceiling, iflag_raised_floor, ifla
 #     f_gains = np.where(Q_dot_sol_wd_max_no_shading > 0.1, Q_dot_sol_wd_no_shading/Q_dot_sol_wd_max_no_shading, 0)
 
     # Plant on/off
-    #Smooth starting of the system when intermittent cooling is performed
-#     hour_start_occupancy = hour_start_coolingplant
+    # Smooth starting of the system when intermittent cooling is performed
+    #     hour_start_occupancy = hour_start_coolingplant
     f_plant=np.asarray([plant(hi,hour_start_coolingplant,hour_stop_coolingplant,hour_start_occupancy) for hi in hour_per])
     
     #!Occupancy heat gains#
@@ -399,15 +417,15 @@ def Qdot(iflag_internal_blind, iflag_suspended_ceiling, iflag_raised_floor, ifla
         Q_dot_r_wd_to_bl=iflag_internal_blind*area_wd*sigma_boltzman*(t_s_wd+273)**4
 
         # Internal blind heat balance
-        Q_dot_c_bl_to_in=2*area_wd*h_c*(t_s_bl-t_a_in)
+        Q_dot_c_bl_to_in=iflag_internal_blind*2*area_wd*h_c*(t_s_bl-t_a_in)
 
         # wall to window radiative exchanges if there is no internal blind
-        Q_dot_r_wall_to_wd = (1-iflag_internal_blind)*Ah_r_wall_to_wd/h_r* sigma_boltzman*(t_s_wall+273)**4 * (t_s_wall-t_s_wd)
-        Q_dot_r_wd_to_wall = (1-iflag_internal_blind)*Ah_r_wd_to_wall/h_r* sigma_boltzman*(t_s_wd+273)**4 * (t_s_wd-t_s_wall)
+        Q_dot_r_wall_to_wd = (1-iflag_internal_blind)*Ah_r_wall_to_wd/h_r* sigma_boltzman*(t_s_wall+273)**4 
+        Q_dot_r_wd_to_wall = (1-iflag_internal_blind)*Ah_r_wd_to_wall/h_r* sigma_boltzman*(t_s_wd+273)**4 
 
         # wall to internal blind radiative exchanges if there is an internal blind
-        Q_dot_r_wall_to_bl = iflag_internal_blind*Ah_r_wall_to_wd/h_r* sigma_boltzman*(t_s_wall+273)**4 * (t_s_wall-t_s_wd)
-        Q_dot_r_bl_to_wall = iflag_internal_blind*Ah_r_wd_to_wall/h_r* sigma_boltzman*(t_s_bl+273)**4 * (t_s_bl-t_s_wall)
+        Q_dot_r_wall_to_bl = iflag_internal_blind*Ah_r_wall_to_wd/h_r* sigma_boltzman*(t_s_wall+273)**4 
+        Q_dot_r_bl_to_wall = iflag_internal_blind*Ah_r_wd_to_wall/h_r* sigma_boltzman*(t_s_bl+273)**4 
 
         # Wall surface node heat balance; Matrix Aij with axis=0 > sum on first index i i.e. sum of each column
         Q_dot_in_to_wall = Q_dot_r_wd_to_wall - Q_dot_r_wall_to_wd + Q_dot_rad_wall[:,ind] + Q_dot_c_in_to_wall+ \
@@ -701,13 +719,22 @@ def Iwd(azimuth_wd_deg, H_B, A1, A2, A3, D_H, month):
     else:
         iflag_vert_screen= 0 
     angle_vert_screen_deg=min(A3,85)
-
-    H_B_wd=max(0.001,H_B)
-    area_wd = Height_wd_0 * Breadth_wd_0
-    Height_wd = (area_wd * H_B_wd) ** 0.5
-    Breadth_wd = (area_wd / H_B_wd) ** 0.5
-    Height_wd_sill = max(0.1, min(Height_wd_sill_0, Height_room - Height_wd) )
     
+    H_B_wd=max(0.001,H_B)
+ 
+    Height_wd_0=H_B_wd*Breadth_wd_0
+    if Height_wd_0 <= Height_room-0.2:
+        Height_wd  = Height_wd_0
+        Breadth_wd = Breadth_wd_0
+    else:
+        Height_wd  = Height_room-0.2
+        Breadth_wd = (Height_room-0.2) / H_B_wd
+        
+    if Height_wd <= Height_room-1:
+        Height_wd_sill = Height_wd_sill_0
+    else:
+        Height_wd_sill = Height_room-Height_wd-0.1
+          
     # "!Window area"
     area_wd=Height_wd*Breadth_wd
     SF_wd=(1-f_frame)*SF_gl
@@ -851,10 +878,10 @@ def DTE(alpha_wall, M_A, azimuth_w_deg, slope_w_deg, iflag_shading, month, t_in)
     sigma_boltzman=5.67E-8
 
     # "!Boundary layers"
-    h_r=5 # [W/m^2-K]
-    h_c=3 # [W/m^2-K]
-    h_in=h_r + h_c
-    h_out=17.5 # [W/m^2-K]
+#     h_r=5 # [W/m^2-K]
+#     h_c=3 # [W/m^2-K]
+#     h_in=h_r + h_c
+#     h_out=17.5 # [W/m^2-K]
 
     # "!Outside insulation for external wall "
     R_out= 2 # [m^2-K/W]
